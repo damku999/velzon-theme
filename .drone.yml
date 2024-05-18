@@ -1,0 +1,47 @@
+# kind: pipeline
+# type: docker
+# name: default
+
+# steps:
+# - name: greeting
+#   image: alpine
+#   commands:
+#   - echo hello
+#   - echo world
+# ---
+kind: pipeline
+type: docker
+name: default
+
+steps:
+- name: docker-build
+  image: docker:dind
+  environment:
+    APP_KEY:
+      from_secret: APP_KEY
+    DB_HOST:
+      from_secret: DB_HOST
+    DB_PORT:
+      from_secret: DB_PORT
+    DB_DATABASE:
+      from_secret: DB_DATABASE
+    DB_USERNAME:
+      from_secret: DB_USERNAME
+    DB_PASSWORD:
+      from_secret: DB_PASSWORD
+  volumes:
+  - name: dockersock
+    path: /var/run/docker.sock
+  commands:
+  - docker compose up --force-recreate --build -d
+  - docker rmi $(docker images -f "dangling=true" -q)
+  # - docker image prune -f -a
+  # - docker build -t shop .
+  # - docker compose pull
+  # - docker compose up -d # --remove-orphans
+  # - docker image prune -a -f
+
+volumes:
+- name: dockersock
+  host:
+    path: /var/run/docker.sock
